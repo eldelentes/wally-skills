@@ -37,6 +37,35 @@ Output: a comparison of WebSockets, SSE, Pusher, Ably, and Supabase Realtime —
 
 ---
 
+### `/wally-plan`
+
+Turn a vague feature idea into a clear, actionable task list before any code gets written.
+
+Arrives at a structured plan saved to `.claude/plan/[feature-name].md` with explicit decisions, tasks, and assumptions — ready to hand off to `/wally-build`.
+
+**When to use:**
+- You've done the research (or already know what you want) and need to scope it into tasks
+- You want to lock in architectural decisions before touching code
+- Right after `/wally-brainstorm` when you have options and need to pick a path
+
+**Trigger phrases:** "help me plan", "break this down", "what tasks do I need", "scope this out", "haz un plan", "ayúdame a planear"
+
+**What it does:**
+1. Checks `.claude/research/[feature-name].md` for prior research and uses it as a starting point
+2. Asks recursive A/B/C questions for every fuzzy area — always with a recommendation, never open-ended
+3. Uses ASCII diagrams for architecture decisions and ASCII mockups for UI layout decisions
+4. Presents the full plan for your approval before saving anything
+5. Saves the approved plan to `.claude/plan/[feature-name].md`
+
+**Example:**
+```
+/wally-plan add real-time notifications
+```
+
+Output: decisions locked (polling vs webhooks, where state lives, auth scope), assumptions listed, and a numbered task list the builder can execute without asking questions.
+
+---
+
 ### `/wally-setup`
 
 Bootstrap a new project from scratch: create the GitHub repo, scaffold the chosen stack, find relevant skills, and write a custom README.
@@ -127,6 +156,7 @@ After a session where you corrected Claude to use Vitest instead of Jest, avoid 
 
 ```
 /wally-brainstorm  →  research saved to .claude/research/
+/wally-plan        →  decisions locked, tasks saved to .claude/plan/
 /wally-setup       →  repo created, stack scaffolded
 /wally-build       →  feature branch, code, PR
 /wally-learn       →  patterns saved to CLAUDE.md
@@ -140,6 +170,7 @@ You don't have to use all of them — each skill works standalone. But they're d
 
 ```bash
 npx skills add https://github.com/eldelentes/wally-skills --skill wally-brainstorm
+npx skills add https://github.com/eldelentes/wally-skills --skill wally-plan
 npx skills add https://github.com/eldelentes/wally-skills --skill wally-setup
 npx skills add https://github.com/eldelentes/wally-skills --skill wally-build
 npx skills add https://github.com/eldelentes/wally-skills --skill wally-learn

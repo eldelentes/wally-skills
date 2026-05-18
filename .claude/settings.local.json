@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git *)",
+      "Read(//Users/lentes/.agents/skills/wally-brainstorm/**)",
+      "Read(//Users/lentes/.agents/skills/**)",
+      "Bash(cp -r /Users/lentes/Documents/Personal/wally-skills/wally-plan ~/.agents/skills/wally-plan)",
+      "Bash(ln -s ../../.agents/skills/wally-plan ~/.claude/skills/wally-plan)"
+    ]
+  }
+}
