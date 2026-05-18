@@ -47,12 +47,14 @@ Run **5-8 web searches in parallel** across these sources. Vary the queries — 
 - Official docs of candidate tools — confirm capabilities and pricing
 - Google for general comparison articles
 
+**Always include the current month and year in queries** to avoid getting stale results from previous years. The current date is available in your system context — use it.
+
 **Query patterns that work well:**
-- `[problem] best library 2026`
-- `[tool A] vs [tool B]`
-- `[tool] production gotchas` or `[tool] limitations`
-- `[problem] github awesome`
-- `[problem] reddit recommendations`
+- `[problem] best library [Month YYYY]` — e.g., "best library May 2026"
+- `[tool A] vs [tool B] [YYYY]`
+- `[tool] production gotchas [YYYY]` or `[tool] limitations [YYYY]`
+- `[problem] github awesome [YYYY]`
+- `[problem] reddit recommendations [Month YYYY]`
 
 Use `web_fetch` to pull the full content of any especially promising result rather than relying on snippets.
 
