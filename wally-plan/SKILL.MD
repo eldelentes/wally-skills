@@ -19,105 +19,94 @@ If no research exists and the question is genuinely "what should we even build",
 
 ---
 
-## Phase 2: Recursive A/B/C questions
+## Phase 2: Recursive decision questions
 
-This is the core of the skill. For every fuzzy area, ask a question with **2-4 concrete options** — not open-ended. Open-ended questions ("how do you want to handle errors?") put the burden on the user. A/B/C questions let them pick fast.
+This is the core of the skill. For every fuzzy area, present **2-4 concrete options** using the `AskUserQuestion` tool — never as plain text. The tool renders native clickable buttons so the user picks instead of types.
 
-**Pattern:**
+**Ask one question at a time.** Call `AskUserQuestion` with a single question, wait for the answer, then call it again for the next. Never dump all questions at once. Each answer may change what you need to ask next.
 
-> **Question:** [What's the decision to make?]
-> **A)** [Concrete option with one-line tradeoff]
-> **B)** [Different concrete option with one-line tradeoff]
-> **C)** [Third option, if applicable]
-> **My recommendation:** [Your pick + one-sentence reasoning]
+**How to use AskUserQuestion:**
+- `question`: the decision being made, phrased as a question
+- `header`: a short chip label (≤12 chars), e.g. "Data fetch", "Auth", "Scope"
+- `options`: 2–4 items, each with a `label` (short) and `description` (one-line tradeoff)
+- Put your recommended option **first** and append `"(Recommended)"` to its label
+- `multiSelect`: false for mutually exclusive choices (most decisions); true only when the user can pick multiple
+- `preview`: use this field when the option has an ASCII diagram or mockup — the UI shows it in a side-by-side panel
 
-Always include your recommendation. The user can accept it ("yes, A") or override ("actually B because X"). Either way it's faster than thinking from scratch.
+**Always include your recommendation as the first option.** The user can pick it or choose another; either way it's faster than thinking from scratch.
 
-### Use diagrams for architecture
+### Use `preview` for architecture diagrams
 
-When the decision is about structure — data flow, component boundaries, request lifecycle, state machines — draw it. ASCII diagrams clarify what bullet points obscure, and the user catches "wait, that's not what I meant" much faster from a picture than from prose.
+When the decision is about structure — data flow, component boundaries, request lifecycle — attach an ASCII diagram to each option's `preview` field. The user sees the diagram when they focus that option, making "wait, that's not what I meant" moments instant.
 
-**Example — data flow choice:**
-
-```
-A) Direct client → API → DB
-
-    [Client] ──HTTP──> [API] ──SQL──> [DB]
-
-
-B) Client → API → Queue → Worker → DB (async)
-
-    [Client] ──HTTP──> [API] ──push──> [Queue]
-                                          │
-                                          ▼
-                                      [Worker] ──SQL──> [DB]
-```
-
-**Example — state machine for an order:**
+**Example — data flow decision via AskUserQuestion:**
 
 ```
-   ┌─────────┐   submit    ┌────────────┐  approve  ┌──────────┐
-   │  draft  │ ──────────> │  pending   │ ────────> │ approved │
-   └─────────┘             └────────────┘           └──────────┘
-                                  │
-                                  │ reject
-                                  ▼
-                            ┌──────────┐
-                            │ rejected │
-                            └──────────┘
+question: "How should the client receive results from the API?"
+options:
+  - label: "Polling (Recommended)"
+    description: "Client polls on an interval — simple, no infra, adds latency."
+    preview: |
+      [Client] ──GET /status──> [API] ──SQL──> [DB]
+           ^                         |
+           └──── every 2s ───────────┘
+  - label: "Webhooks"
+    description: "API pushes result — real-time, but needs a public endpoint."
+    preview: |
+      [Client] ──POST /job──> [API] ──> [Queue]
+                                            │
+                                            ▼
+                                        [Worker] ──POST /webhook──> [Client]
+  - label: "Server-sent events"
+    description: "Streaming response — middle ground, Fal.ai supports it natively."
+    preview: |
+      [Client] ──GET /stream──> [API] ──SSE──> (data chunks) ──> [Client]
 ```
 
-Keep diagrams compact. If they need to scroll horizontally they're too wide — break into multiple smaller diagrams instead.
+Keep diagrams compact — if they scroll horizontally, split into multiple smaller diagrams.
 
-### Use ASCII mockups for UI decisions
+### Use `preview` for UI layout decisions
 
-When the decision involves a UI layout — modal vs page, sidebar vs top nav, where a button lives — sketch it in ASCII. It's faster than asking "where should the button go?" and clearer than describing it in words.
+When the decision involves a UI layout — modal vs page, sidebar vs top nav, where a button lives — put an ASCII mockup in each option's `preview`. The user sees the layout immediately when they hover/focus, not after reading a description.
 
-**Example — modal vs inline:**
+**Example — modal vs inline via AskUserQuestion:**
 
 ```
-A) Modal                              B) Inline expansion
-
-┌─────────────────────────┐           ┌─────────────────────────┐
-│ Page                    │           │ Page                    │
-│  ┌───────────────────┐  │           │  ┌───────────────────┐  │
-│  │  Edit user        │  │           │  │ [▼] John Smith    │  │
-│  │  ─────────────    │  │           │  │     ─────────     │  │
-│  │  Name: [______]   │  │           │  │     Name: [____]  │  │
-│  │  [Save] [Cancel]  │  │           │  │     [Save]        │  │
-│  └───────────────────┘  │           │  └───────────────────┘  │
-│  (rest dimmed)          │           │  ┌───────────────────┐  │
-│                         │           │  │ [▶] Jane Doe      │  │
-└─────────────────────────┘           │  └───────────────────┘  │
-                                      └─────────────────────────┘
+options:
+  - label: "Modal (Recommended)"
+    description: "Opens a dialog over the page — clear focus, standard UX."
+    preview: |
+      ┌─────────────────────────┐
+      │ Page                    │
+      │  ┌───────────────────┐  │
+      │  │  Edit user        │  │
+      │  │  Name: [______]   │  │
+      │  │  [Save] [Cancel]  │  │
+      │  └───────────────────┘  │
+      │  (rest dimmed)          │
+      └─────────────────────────┘
+  - label: "Inline expansion"
+    description: "Row expands in place — no context switch, trickier to implement."
+    preview: |
+      ┌─────────────────────────┐
+      │  ┌───────────────────┐  │
+      │  │ [▼] John Smith    │  │
+      │  │     Name: [____]  │  │
+      │  │     [Save]        │  │
+      │  └───────────────────┘  │
+      │  ┌───────────────────┐  │
+      │  │ [▶] Jane Doe      │  │
+      │  └───────────────────┘  │
+      └─────────────────────────┘
 ```
-
-The user doesn't need pixel accuracy — they need to see structure to know if it matches what they imagined.
 
 ### Ask for screenshots when the user has a reference
 
-If the user mentions "make it look like X" or describes UI in vague terms ("you know, like a settings page"), ask them to paste a screenshot. One sentence:
+If the user mentions "make it look like X" or uses hedge words like "kinda", "similar to", ask them to paste a screenshot before presenting layout options. One sentence is enough:
 
 > "Do you have a screenshot of something similar? Pasting one beats describing it — I can read the layout directly."
 
-Screenshots are especially worth requesting when:
-- The user is matching an existing product's UI
-- They mention a specific app or website by name
-- The UI is non-trivial (dashboards, complex forms, multi-step flows)
-- Their description includes hedge words like "kinda", "similar to", "sort of"
-
-If they paste one, study it before proposing the layout. Often the screenshot answers 5 questions you would otherwise have asked.
-
-**Example:**
-
-> User: "I want to add the Fal.ai API to my project."
->
-> **How do you want to get results back from Fal.ai?**
-> **A)** Polling — simpler, no infra needed, but wastes requests and adds latency.
-> **B)** Webhooks — real-time, no wasted requests, but requires a public endpoint (ngrok in dev).
-> **C)** Server-sent events — Fal.ai supports this for some endpoints; middle-ground.
->
-> **My recommendation:** A for MVP, swap to B once you have a deployed endpoint.
+If they paste one, study it before calling AskUserQuestion for layout decisions. Often the screenshot answers 5 questions at once.
 
 ### Areas to probe (in roughly this order)
 
@@ -175,9 +164,20 @@ If the user pasted a screenshot, link or reference it so future readers know wha
 - [Things that could go wrong, with mitigation if known]
 ```
 
-Ask: **"Does this look right, or do you want to change anything before I save it?"**
+Use `AskUserQuestion` to confirm before saving:
 
-Wait for confirmation. If they want changes, apply them and re-confirm. Don't save a plan they haven't approved.
+```
+question: "Does this plan look right?"
+options:
+  - label: "Save it (Recommended)"
+    description: "Looks good — save to .claude/plan/ and move on."
+  - label: "Change something"
+    description: "I want to adjust a decision or task before saving."
+  - label: "Start over"
+    description: "This direction is wrong — let me re-describe the feature."
+```
+
+If they want changes, apply them and call `AskUserQuestion` again. Don't save a plan they haven't approved.
 
 ---
 
@@ -191,8 +191,9 @@ After saving, tell the user the path and suggest `/wally-build` as the natural n
 
 ## Anti-patterns to avoid
 
-- **Don't ask open-ended questions.** "How should errors work?" makes the user think. "A) retry 3x then fail, B) fail fast and log, C) queue for manual review — I recommend A" lets them pick.
+- **Don't output A/B/C options as plain text.** Always use the `AskUserQuestion` tool — it renders native clickable buttons. Text options force the user to type, which is exactly the UX problem this skill exists to avoid.
+- **Don't ask open-ended questions.** "How should errors work?" makes the user think. Use `AskUserQuestion` with concrete options: "retry 3x then fail (Recommended)", "fail fast and log", "queue for manual review".
 - **Don't skip the assumptions section.** When the plan fails later, it's usually because an unstated assumption was wrong. Stating them surfaces the risk.
 - **Don't write tasks that hide decisions.** "Implement caching" is bad. "Add LRU cache to `getUser()` with 5min TTL" is good — every decision visible.
-- **Don't save without explicit approval.** The user has to see and accept the plan first.
+- **Don't save without explicit approval.** The user has to see and accept the plan first. Use `AskUserQuestion` for the final "does this look right?" confirmation too.
 - **Don't ignore existing research.** Always check `.claude/research/` before asking questions the research already answers.
