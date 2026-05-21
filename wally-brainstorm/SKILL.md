@@ -35,6 +35,8 @@ State your understanding back in one sentence before searching. If they correct 
 
 ## Phase 2: Scout the landscape
 
+**Before any search:** Read `currentDate` from your system context and extract the current year and month. You MUST use this year in every query — never default to your training data's year. If today is 2026-05-21, every query includes "2026", not "2025".
+
 Run **5-8 web searches in parallel** across these sources. Vary the queries — don't search the same thing 8 times.
 
 **Sources to bias toward:**
